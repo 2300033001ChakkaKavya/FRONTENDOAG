@@ -16,19 +16,34 @@ export class ProjectHomePage extends Component {
     role: ""
   };
 
+  // ✅ Reset + prevent autofill
   toggleSignup = () => {
-    this.setState({ showSignup: !this.state.showSignup });
+    this.setState((prevState) => ({
+      showSignup: !prevState.showSignup,
+      fullname: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: ""
+    }));
   };
 
+  // ✅ Reset + prevent autofill
   toggleSignin = () => {
-    this.setState({ showSignin: !this.state.showSignin });
+    this.setState((prevState) => ({
+      showSignin: !prevState.showSignin,
+      email: "",
+      password: ""
+    }));
   };
 
   handleSignout = () => {
     this.setState({ isLoggedIn: false });
+    localStorage.removeItem("token");
     alert("You have signed out.");
   };
-handleSignup = async (e) => {
+
+  handleSignup = async (e) => {
     e.preventDefault();
     const { fullname, email, password, confirmPassword, role } = this.state;
 
@@ -47,7 +62,8 @@ handleSignup = async (e) => {
       const result = await response.json();
 
       if (response.ok) {
-        alert(result.message); // ✅ Only display message, NOT token
+        alert(result.message || "Signup successful!");
+
         this.setState({
           isLoggedIn: false,
           showSignup: false,
@@ -58,44 +74,44 @@ handleSignup = async (e) => {
           role: "",
         });
       } else {
-        alert(result.message);
+        alert(result.message || "Signup failed.");
       }
     } catch (error) {
       alert("An error occurred while signing up: " + error.message);
     }
-};
+  };
 
   handleSignin = async (e) => {
     e.preventDefault();
     const { email, password } = this.state;
 
     try {
-        const response = await fetch("http://localhost:8080/api/users/signin", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+      const response = await fetch("http://localhost:8080/api/users/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", result.token);
+        alert(`Welcome back, ${result.fullname || "user"}!`);
+
+        this.setState({
+          isLoggedIn: true,
+          fullname: result.fullname || "",
+          showSignin: false,
+          email: "",
+          password: "",
         });
-
-        const result = await response.json(); // Parse JSON response
-
-        if (response.ok) {
-            localStorage.setItem("token", result.token); // Store JWT token for authentication
-            alert(`Welcome back, ${result.message}!`);
-            this.setState({
-                isLoggedIn: true,
-                fullname: result.fullname, // Assuming fullname is returned
-                showSignin: false,
-                email: "",
-                password: "",
-            });
-        } else {
-            alert(result.message); // Show server error message
-        }
+      } else {
+        alert(result.message || "Signin failed.");
+      }
     } catch (error) {
-        alert("An error occurred while signing in: " + error.message);
+      alert("An error occurred while signing in: " + error.message);
     }
-};
-
+  };
 
   handleChange = (e) => {
     this.setState({ [e.target.name]: e.target.value });
@@ -157,17 +173,17 @@ handleSignup = async (e) => {
             <div className="signup-modal">
               <span className="close-btn" onClick={this.toggleSignup}>&times;</span>
               <h2>Sign up</h2>
-              <form onSubmit={this.handleSignup}>
-                <input type="text" name="fullname" placeholder="Full Name" value={this.state.fullname} onChange={this.handleChange} required />
-                <input type="email" name="email" placeholder="Email" value={this.state.email} onChange={this.handleChange} required />
+              <form onSubmit={this.handleSignup} autoComplete="off">
+                <input type="text" name="fullname" placeholder="Full Name" value={this.state.fullname} onChange={this.handleChange} required autoComplete="off" />
+                <input type="email" name="email" placeholder="Email" value={this.state.email} onChange={this.handleChange} required autoComplete="off" />
                 <select name="role" value={this.state.role} onChange={this.handleChange} required>
                   <option value="">Select Role</option>
                   <option value="artist">Artist</option>
                   <option value="curator">Curator</option>
                   <option value="buyer">Buyer</option>
                 </select>
-                <input type="password" name="password" placeholder="Password" value={this.state.password} onChange={this.handleChange} required />
-                <input type="password" name="confirmPassword" placeholder="Confirm Password" value={this.state.confirmPassword} onChange={this.handleChange} required />
+                <input type="password" name="password" placeholder="Password" value={this.state.password} onChange={this.handleChange} required autoComplete="new-password" />
+                <input type="password" name="confirmPassword" placeholder="Confirm Password" value={this.state.confirmPassword} onChange={this.handleChange} required autoComplete="new-password" />
                 <button type="submit" className="signup-btn">Sign up</button>
               </form>
             </div>
@@ -180,9 +196,9 @@ handleSignup = async (e) => {
             <div className="signin-modal">
               <span className="close-btn" onClick={this.toggleSignin}>&times;</span>
               <h2>Sign in</h2>
-              <form onSubmit={this.handleSignin}>
-                <input type="email" name="email" placeholder="Email" value={this.state.email} onChange={this.handleChange} required />
-                <input type="password" name="password" placeholder="Password" value={this.state.password} onChange={this.handleChange} required />
+              <form onSubmit={this.handleSignin} autoComplete="off">
+                <input type="email" name="email" placeholder="Email" value={this.state.email} onChange={this.handleChange} required autoComplete="off" />
+                <input type="password" name="password" placeholder="Password" value={this.state.password} onChange={this.handleChange} required autoComplete="new-password" />
                 <button type="submit" className="signin-btn">Sign in</button>
               </form>
             </div>
